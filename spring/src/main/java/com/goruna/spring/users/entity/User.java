@@ -51,4 +51,8 @@ public class User extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "user")
     private List<Bookmark> bookmarks;
+
+    public void addUserSeq(Long userSeq) {
+        this.userSeq = userSeq;
+    }
 }
