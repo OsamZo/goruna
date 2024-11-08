@@ -1,44 +1,54 @@
 <script setup>
 import '@/assets/css/reset.css';
+import { useUserStore } from '@/store/userStore';
+import { ref, onMounted, watch } from 'vue';
+import ModalNickname from '@/components/ModalNickname.vue';
 
-import { ref } from 'vue';
-import axios from 'axios';
+const userStore = useUserStore();
+const showNicknameModal = ref(false);
 
-const googleResult = ref(null);
-
-const loginWithGoogle = async () => {
-  try {
-    const response = await axios.post('http://localhost:8100/api/v1/oauth2/google');
-
-    window.location.href = response.data;
-  } catch (error) {
-    console.error('로그인 URL 요청 실패:', error);
-  }
+const handleLoginClick = async () => {
+  console.log('로그인 버튼 클릭됨'); // 디버깅용 로그
+  await userStore.loginWithGoogle();
 };
 
-const resultWithGoogle = async (authCode) => {
-  try {
-    const response = await axios.get(`http://localhost:8100/api/v1/oauth2/google?code=${authCode}`);
+const processAuthCodeAndOpenModal = async () => {
+  if (window.location.search.includes('code')) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCode = urlParams.get('code');
+    console.log('감지된 authCode:', authCode); // 디버깅용 로그
 
-    const result = response.data;
+    if (authCode) {
+      try {
+        await userStore.processGoogleAuthResult(authCode);
+        console.log('구글 인증 성공 후 상태:', userStore.isAuthenticated); // 상태 변화 확인
+        console.log('로그인 후 userInfo 상태:', userStore.userInfo); // 디버깅용 로그
 
-    if (result === 'signup') {
-      window.location.href = '/signup';
-    } else if (result === 'login') {
-      window.location.href = '/';
+        // 닉네임 모달 창 표시 조건
+        if (userStore.isAuthenticated && !userStore.userInfo?.userNickname) {
+          showNicknameModal.value = true;
+        }
+      } catch (error) {
+        console.error('구글 인증 처리 중 오류:', error);
+      }
     }
-  } catch (error) {
-    console.error('로그인 처리 중 오류 발생', error);
   }
 };
 
-if (window.location.search.includes('code')) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const authCode = urlParams.get('code');
-  if (authCode) {
-    resultWithGoogle(authCode);
+// 상태 변화를 감지하여 모달 창 표시
+watch(
+  () => userStore.isAuthenticated,
+  (newVal) => {
+    if (newVal && !userStore.userInfo?.userNickname) {
+      showNicknameModal.value = true;
+    }
   }
-}
+);
+
+// 컴포넌트가 마운트될 때 인증 코드를 처리
+onMounted(() => {
+  processAuthCodeAndOpenModal();
+});
 </script>
 
 <template>
@@ -48,23 +58,24 @@ if (window.location.search.includes('code')) {
       <img src="https://goruna.s3.us-west-1.amazonaws.com/1a90a548-a272-4c5d-aa3f-076c6b74997d_kakaotalk.png">
       <div class="login-type">카카오 계정으로 로그인</div>
     </div>
-    <div class="gray-btn" @click="loginWithGoogle">
+    <div class="gray-btn" @click="handleLoginClick">
       <img src="https://goruna.s3.us-west-1.amazonaws.com/755c83be-a394-4344-801c-6b3f8f118b0f_google.png">
       <div class="login-type">구글 계정으로 로그인</div>
     </div>
+    <ModalNickname v-if="showNicknameModal" @nicknameAdded="showNicknameModal = false" />
   </div>
 </template>
 
 <style scoped>
-.login-type{
+.login-type {
   margin: auto;
 }
-.login-title{
+.login-title {
   font-size: 25px;
   margin-bottom: 50px;
   font-weight: bold;
 }
-.content-box{
+.content-box {
   border-radius: 43px;
   background: #FFF;
   box-shadow: 0px 4px 13px 0px rgba(0, 0, 0, 0.13) inset;
@@ -74,7 +85,7 @@ if (window.location.search.includes('code')) {
   display: flex;
   flex-direction: column;
 }
-.gray-btn{
+.gray-btn {
   display: flex;
   background-color: var(--button-gray);
   border-radius: 52px;
