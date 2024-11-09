@@ -2,6 +2,8 @@ package com.goruna.spring.book.entity;
 
 import com.goruna.spring.common.aggregate.YnType;
 import com.goruna.spring.common.aggregate.entity.BaseTimeEntity;
+import com.goruna.spring.common.exception.CustomException;
+import com.goruna.spring.common.exception.ErrorCodeType;
 import com.goruna.spring.product.entity.Product;
 import com.goruna.spring.users.entity.User;
 import jakarta.persistence.*;
@@ -45,5 +47,12 @@ public class Book extends BaseTimeEntity {
         this.user = user;
         this.product = product;
         this.bookQty = bookQty;
+    }
+
+    public void cancelBook() {
+        if(this.isBookCancelled == YnType.Y) {
+            throw new CustomException(ErrorCodeType.ALREADY_CANCELLED);
+        }
+        this.isBookCancelled = YnType.Y;
     }
 }

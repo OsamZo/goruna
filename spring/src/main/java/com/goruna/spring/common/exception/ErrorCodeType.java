@@ -23,6 +23,7 @@ public enum ErrorCodeType {
 
     // book 관련 오류
     INVALID_QUANTITY(HttpStatus.CONFLICT, "BOOK_ERROR_001", "재고가 부족합니다."),
+    ALREADY_CANCELLED(HttpStatus.CONFLICT, "BOOK_ERROR_002", "이미 취소된 예약입니다."),
 
     // product 관련 오류
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_ERROR_001", "상품을 찾을 수 없습니다."),
